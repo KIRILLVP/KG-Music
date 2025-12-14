@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -187,13 +187,14 @@
     </div>
 
     <script>
-        // --- 1. ВАШИ КЛЮЧИ SUPABASE ---
-        // ИНТЕГРИРОВАННЫЕ КЛЮЧИ:
+        // --- 1. ВАШИ КЛЮЧИ SUPABASE (Интегрированы) ---
         const SUPABASE_URL = 'https://tqvrrhxelhoxvnrobksx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdnJyaHhlbGhveHZucm9ia3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTg3MjYsImV4cCI6MjA4MTI5NDcyNn0.VwYABhMME_qOEWdy2-JSvEJP5wqOaUW5Mg92Yd7WiE0';
 
-        // Инициализация клиента Supabase
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // ИСПРАВЛЕНИЕ: Получаем createClient из глобального объекта window.supabase
+        const { createClient } = window.supabase; 
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
+        
         const BUCKET_NAME = 'music';
         const TABLE_NAME = 'tracks';
 
@@ -272,7 +273,7 @@
                 // Путь: 'music/timestamp_title_author.mp3'
                 const filePath = `${Date.now()}_${title.replace(/\s/g, '_')}_${alias.replace(/\s/g, '_')}.${fileExtension}`;
                 
-                const { error: uploadError } = await supabase.storage
+                const { error: uploadError } = await supabaseClient.storage // Используем supabaseClient
                     .from(BUCKET_NAME)
                     .upload(filePath, selectedFile, {
                         cacheControl: '3600',
@@ -282,12 +283,12 @@
                 if (uploadError) throw uploadError;
                 
                 // 2. Получаем публичный URL для файла
-                const { data: publicUrlData } = supabase.storage
+                const { data: publicUrlData } = await supabaseClient.storage // Используем supabaseClient
                     .from(BUCKET_NAME)
                     .getPublicUrl(filePath);
 
                 // 3. Записываем информацию о треке в Database
-                const { error: insertError } = await supabase
+                const { error: insertError } = await supabaseClient // Используем supabaseClient
                     .from(TABLE_NAME)
                     .insert({
                         author_alias: alias,
@@ -324,7 +325,7 @@
 
             try {
                 // Получаем список треков, сортируя по дате создания (новые сверху)
-                const { data: tracks, error } = await supabase
+                const { data: tracks, error } = await supabaseClient // Используем supabaseClient
                     .from(TABLE_NAME)
                     .select('author_alias, track_title, file_url, created_at')
                     .order('created_at', { ascending: false }); 
