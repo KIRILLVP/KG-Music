@@ -191,14 +191,15 @@
         const SUPABASE_URL = 'https://tqvrrhxelhoxvnrobksx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdnJyaHhlbGhveHZucm9ia3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTg3MjYsImV4cCI6MjA4MTI5NDcyNn0.VwYABhMME_qOEWdy2-JSvEJP5wqOaUW5Mg92Yd7WiE0';
 
-        // ИСПРАВЛЕНИЕ: Получаем createClient из глобального объекта window.supabase
+        // ИСПРАВЛЕНИЕ #1: Получаем createClient из глобального объекта window.supabase
         const { createClient } = window.supabase; 
         
         // Инициализация клиента Supabase (теперь createClient доступен)
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
         
         const BUCKET_NAME = 'music';
-        const TABLE_NAME = 'tracks';
+        // ИСПРАВЛЕНИЕ #2: Используем 'Tracks' с заглавной буквы, как названа таблица в Supabase
+        const TABLE_NAME = 'Tracks'; 
 
         // Элементы DOM
         const uploadButton = document.getElementById('upload-button');
@@ -317,6 +318,9 @@
                 // Проверка на ошибку RLS (политики безопасности)
                 if (error.message.includes('permission denied')) {
                      modalStatus.textContent = `❌ Ошибка публикации: Проверьте политики RLS в Supabase.`;
+                } else if (error.message.includes('not find the table')) {
+                     // Дополнительная проверка на случай, если вы забыли обновить имя таблицы
+                     modalStatus.textContent = `❌ Ошибка: Не найдена таблица 'Tracks'. Проверьте регистр!`;
                 } else {
                      modalStatus.textContent = `❌ Ошибка публикации: ${error.message}`;
                 }
