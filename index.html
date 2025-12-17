@@ -8,7 +8,7 @@
     <meta name="google-site-verification" content="99BrYQNJySJw7pONOquKyMcz9qyrDQ9weItFEUBFPKI" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Minimalist Dark Style */
+        /* Minimalist Horror Style */
         body {
             background-color: #000;
             color: #fff;
@@ -57,7 +57,7 @@
             background-color: #1a1a1a;
             padding: 15px;
             margin-bottom: 10px;
-            border-left: 5px solid #ff0000; /* Horror Accent */
+            border-left: 5px solid #ff0000;
             border-radius: 4px;
             display: flex;
             flex-direction: column;
@@ -70,10 +70,6 @@
             margin-bottom: 10px;
         }
 
-        .track-title-author {
-            flex-grow: 1;
-        }
-        
         .track-title-author h3 {
             margin: 0;
             font-size: 1.2em;
@@ -89,37 +85,37 @@
         audio {
             width: 100%;
             background-color: #333;
+            margin-top: 10px;
         }
 
         /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
-            z-index: 10;
+            z-index: 100;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.9);
         }
 
         .modal-content {
             background-color: #222;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
+            margin: 10% auto;
+            padding: 25px;
+            border: 1px solid #444;
+            width: 90%;
             max-width: 400px;
             border-radius: 8px;
         }
 
         .modal-content input[type="text"] {
-            width: calc(100% - 22px);
-            padding: 10px;
-            margin: 8px 0;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
             box-sizing: border-box;
-            background-color: #333;
+            background-color: #111;
             border: 1px solid #555;
             color: white;
         }
@@ -127,13 +123,14 @@
         #publish-button {
             background-color: #ff0000;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border: none;
+            width: 100%;
             cursor: pointer;
+            font-weight: bold;
             opacity: 0.5;
             transition: opacity 0.3s;
             pointer-events: none;
-            margin-top: 10px;
         }
         
         #publish-button.active {
@@ -142,26 +139,25 @@
         }
 
         .status-message {
-            margin-top: 10px;
-            font-weight: bold;
+            margin-top: 15px;
+            font-size: 0.9em;
+            text-align: center;
         }
         .error { color: #ff4d4d; }
         .success { color: #4dff4d; }
         
-        #hidden-file-input {
-            display: none;
-        }
+        #hidden-file-input { display: none; }
     </style>
 </head>
 <body>
 
     <div class="header-container">
         <img src="./bannerKG.jpg" alt="KIRILLVP GAMES Banner" class="banner">
-        <button id="upload-button">Upload your music</button>
+        <button id="upload-button">Upload Music</button>
     </div>
 
     <div id="tracks-container">
-        <h2>Recent Tracks:</h2>
+        <h2>Latest Releases</h2>
         <ul id="tracks-list" style="list-style: none; padding: 0;">
             <li class="status-message">Loading tracks...</li>
         </ul>
@@ -171,217 +167,194 @@
 
     <div id="metadata-modal" class="modal">
         <div class="modal-content">
-            <h3>Track Information</h3>
-            <p>Selected: <strong id="selected-file-name"></strong></p>
+            <h3 style="margin-top: 0;">Track Details</h3>
+            <p style="font-size: 0.8em; color: #888;">File: <span id="selected-file-name" style="color: #eee;"></span></p>
             
-            <label for="authorAlias">Your name or nickname:</label>
-            <input type="text" id="authorAlias" placeholder="e.g. KIRILLVP" required>
+            <label>Artist Name:</label>
+            <input type="text" id="authorAlias" placeholder="Enter your name" maxlength="30">
             
-            <label for="trackTitle">Track title:</label>
-            <input type="text" id="trackTitle" placeholder="e.g. Dark Forest Theme" required>
+            <label>Track Title:</label>
+            <input type="text" id="trackTitle" placeholder="Enter song title" maxlength="50">
 
-            <button id="publish-button">Publish</button>
+            <button id="publish-button">Publish Track</button>
             <p id="modalStatus" class="status-message"></p>
         </div>
     </div>
 
     <script>
-    // --- 1. SUPABASE CONFIG ---
-    const SUPABASE_URL = 'https://tqvrrhxelhoxvnrobksx.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdnJyaHhlbGhveHZucm9ia3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTg3MjYsImV4cCI6MjA4MTI5NDcyNn0.VwYABhMME_qOEWdy2-JSvEJP5wqOaUW5Mg92Yd7WiE0';
+        // --- CONFIGURATION ---
+        const SUPABASE_URL = 'https://tqvrrhxelhoxvnrobksx.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdnJyaHhlbGhveHZucm9ia3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTg3MjYsImV4cCI6MjA4MTI5NDcyNn0.VwYABhMME_qOEWdy2-JSvEJP5wqOaUW5Mg92Yd7WiE0';
 
-    // Получаем клиент из глобального объекта
-    const { createClient } = window.supabase;
-    // Объявляем ПЕРЕМЕННУЮ ТОЛЬКО ОДИН РАЗ
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    const BUCKET_NAME = 'music';
-    const TABLE_NAME = 'Tracks';
-
-    // Элементы DOM
-    const uploadButton = document.getElementById('upload-button');
-    const hiddenFileInput = document.getElementById('hidden-file-input');
-    const metadataModal = document.getElementById('metadata-modal');
-    const selectedFileName = document.getElementById('selected-file-name');
-    const authorAliasInput = document.getElementById('authorAlias');
-    const trackTitleInput = document.getElementById('trackTitle');
-    const publishButton = document.getElementById('publish-button');
-    const modalStatus = document.getElementById('modalStatus');
-    const tracksList = document.getElementById('tracks-list');
-    
-    let selectedFile = null;
-
-    // --- ФУНКЦИЯ ПРОВЕРКИ ЛИМИТОВ ---
-    async function canUpload() {
-        const today = new Date().toDateString();
-        const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // 1. Проверка через LocalStorage (быстрая)
-        if (localData.date === today && localData.count >= 2) return false;
+        const BUCKET_NAME = 'music';
+        const TABLE_NAME = 'Tracks';
 
-        // 2. Попытка получить IP (с защитой от блокировки VPN)
-        let currentIp = "unknown_" + Math.random().toString(16).slice(2, 8);
-        try {
-            const ipRes = await fetch('https://api.ipify.org?format=json', { timeout: 3000 });
-            if (ipRes.ok) {
-                const data = await ipRes.json();
-                currentIp = data.ip;
-            }
-        } catch (e) {
-            console.warn("IP check failed (could be VPN), using fallback.");
-        }
+        // DOM elements
+        const uploadBtn = document.getElementById('upload-button');
+        const fileInput = document.getElementById('hidden-file-input');
+        const modal = document.getElementById('metadata-modal');
+        const publishBtn = document.getElementById('publish-button');
+        const modalStatus = document.getElementById('modalStatus');
+        const tracksList = document.getElementById('tracks-list');
+        
+        let selectedFile = null;
 
-        // 3. Проверка в базе данных по IP
-        try {
-            const { count, error } = await supabaseClient
-                .from(TABLE_NAME)
-                .select('created_at', { count: 'exact', head: true })
-                .eq('user_ip', currentIp)
-                .gte('created_at', new Date().toISOString().split('T')[0]);
-
-            if (!error && count >= 2) return false;
-            return currentIp;
-        } catch (e) {
-            return currentIp; // Если база не ответила, разрешаем загрузку, но помечаем IP
-        }
-    }
-
-    // --- ЛОГИКА ИНТЕРФЕЙСА ---
-    uploadButton.addEventListener('click', () => hiddenFileInput.click());
-
-    hiddenFileInput.addEventListener('change', (e) => {
-        selectedFile = e.target.files[0];
-        if (selectedFile) {
-            if (selectedFile.type !== 'audio/mpeg' && selectedFile.type !== 'audio/wav') {
-                alert('Please select .mp3 or .wav file.');
-                return;
-            }
-            selectedFileName.textContent = selectedFile.name;
-            metadataModal.style.display = 'block';
-            authorAliasInput.value = '';
-            trackTitleInput.value = '';
-            modalStatus.textContent = '';
-            publishButton.classList.remove('active');
-        }
-    });
-
-    [authorAliasInput, trackTitleInput].forEach(input => {
-        input.addEventListener('input', () => {
-            if (authorAliasInput.value.trim() && trackTitleInput.value.trim()) {
-                publishButton.classList.add('active');
-            } else {
-                publishButton.classList.remove('active');
-            }
-        });
-    });
-
-    // --- ПУБЛИКАЦИЯ ТРЕКА ---
-    publishButton.addEventListener('click', async () => {
-        const alias = authorAliasInput.value.trim();
-        const title = trackTitleInput.value.trim();
-
-        modalStatus.textContent = 'Verifying...';
-        modalStatus.className = 'status-message';
-        publishButton.disabled = true;
-
-        const userIp = await canUpload();
-        if (userIp === false) {
-            modalStatus.textContent = '❌ Limit reached: 2 tracks per day.';
-            modalStatus.className = 'status-message error';
-            publishButton.disabled = false;
-            return;
-        }
-
-        modalStatus.textContent = 'Uploading... Please wait.';
-
-        try {
-            const fileExtension = selectedFile.name.split('.').pop();
-            const filePath = `${Date.now()}_${title.replace(/\s/g, '_')}.${fileExtension}`;
-            
-            const { error: uploadError } = await supabaseClient.storage
-                .from(BUCKET_NAME)
-                .upload(filePath, selectedFile);
-
-            if (uploadError) throw uploadError;
-            
-            const { data: publicUrlData } = await supabaseClient.storage
-                .from(BUCKET_NAME)
-                .getPublicUrl(filePath);
-
-            const { error: insertError } = await supabaseClient
-                .from(TABLE_NAME)
-                .insert({
-                    author_alias: alias,
-                    track_title: title,
-                    file_url: publicUrlData.publicUrl,
-                    user_ip: userIp
-                });
-
-            if (insertError) throw insertError;
-
-            // Обновляем Local Storage
+        // --- LIMIT CHECKER (LocalStorage + IP Fallback) ---
+        async function checkLimit() {
             const today = new Date().toDateString();
             const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
-            const newCount = (localData.date === today ? localData.count : 0) + 1;
-            localStorage.setItem('upload_limit', JSON.stringify({ date: today, count: newCount }));
-
-            modalStatus.textContent = '✅ Success! Track published.';
-            modalStatus.className = 'status-message success';
             
-            setTimeout(() => {
-                metadataModal.style.display = 'none';
-                fetchTracks();
-                publishButton.disabled = false;
-            }, 1500);
+            // 1. Local check
+            if (localData.date === today && localData.count >= 2) return false;
 
-        } catch (error) {
-            modalStatus.textContent = `❌ Error: ${error.message}`;
-            modalStatus.className = 'status-message error';
-            publishButton.disabled = false;
+            // 2. IP check with timeout to prevent VPN hanging
+            let ip = "anon_" + Math.floor(Math.random() * 1000000);
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2500);
+                const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                const data = await res.json();
+                ip = data.ip;
+            } catch (e) { console.warn("IP check skipped (VPN or Timeout)"); }
+
+            return ip;
         }
-    });
 
-    // --- ЗАГРУЗКА СПИСКА ТРЕКОВ ---
-    async function fetchTracks() {
-        tracksList.innerHTML = '<li class="status-message">Refreshing list...</li>';
-        try {
-            const { data: tracks, error } = await supabaseClient
-                .from(TABLE_NAME)
-                .select('author_alias, track_title, file_url, created_at')
-                .order('created_at', { ascending: false });
+        // --- EVENTS ---
+        uploadBtn.onclick = () => fileInput.click();
 
-            if (error) throw error;
-            tracksList.innerHTML = '';
+        fileInput.onchange = (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                document.getElementById('selected-file-name').textContent = selectedFile.name;
+                modal.style.display = 'block';
+                modalStatus.textContent = '';
+                publishBtn.classList.remove('active');
+            }
+        };
 
-            if (tracks && tracks.length > 0) {
+        const validate = () => {
+            const isReady = document.getElementById('authorAlias').value.trim() && 
+                            document.getElementById('trackTitle').value.trim();
+            publishBtn.classList.toggle('active', !!isReady);
+        };
+
+        document.getElementById('authorAlias').oninput = validate;
+        document.getElementById('trackTitle').oninput = validate;
+
+        // --- UPLOAD LOGIC ---
+        publishBtn.onclick = async () => {
+            const alias = document.getElementById('authorAlias').value.trim();
+            const title = document.getElementById('trackTitle').value.trim();
+
+            publishBtn.disabled = true;
+            modalStatus.textContent = "Checking limits...";
+            modalStatus.className = "status-message";
+
+            const userIdentifier = await checkLimit();
+            if (!userIdentifier) {
+                modalStatus.textContent = "❌ Limit reached: 2 tracks per day.";
+                modalStatus.className = "status-message error";
+                publishBtn.disabled = false;
+                return;
+            }
+
+            modalStatus.textContent = "Uploading... Please wait.";
+
+            try {
+                const fileExt = selectedFile.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                // 1. Storage Upload
+                const { error: storageErr } = await supabase.storage
+                    .from(BUCKET_NAME)
+                    .upload(fileName, selectedFile);
+
+                if (storageErr) throw storageErr;
+
+                // 2. Get Public Link
+                const { data: linkData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+
+                // 3. Database Entry
+                const { error: dbErr } = await supabase
+                    .from(TABLE_NAME)
+                    .insert([{
+                        author_alias: alias,
+                        track_title: title,
+                        file_url: linkData.publicUrl,
+                        user_ip: userIdentifier
+                    }]);
+
+                if (dbErr) throw dbErr;
+
+                // 4. Update local limit
+                const today = new Date().toDateString();
+                const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
+                localStorage.setItem('upload_limit', JSON.stringify({
+                    date: today,
+                    count: (localData.date === today ? localData.count : 0) + 1
+                }));
+
+                modalStatus.textContent = "✅ Success! Published.";
+                modalStatus.className = "status-message success";
+
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    fetchTracks();
+                    publishBtn.disabled = false;
+                    fileInput.value = '';
+                }, 1500);
+
+            } catch (err) {
+                console.error(err);
+                modalStatus.textContent = "❌ Error: " + err.message;
+                modalStatus.className = "status-message error";
+                publishBtn.disabled = false;
+            }
+        };
+
+        // --- FETCH TRACKS ---
+        async function fetchTracks() {
+            try {
+                const { data: tracks, error } = await supabase
+                    .from(TABLE_NAME)
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                tracksList.innerHTML = tracks.length ? '' : '<li class="status-message">No tracks yet.</li>';
+
                 tracks.forEach(track => {
-                    const listItem = document.createElement('li');
-                    listItem.className = 'track-item';
                     const date = new Date(track.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric', month: 'short', day: 'numeric'
+                        month: 'short', day: 'numeric', year: 'numeric'
                     });
-
-                    listItem.innerHTML = `
+                    const li = document.createElement('li');
+                    li.className = 'track-item';
+                    li.innerHTML = `
                         <div class="track-info-line">
                             <div class="track-title-author">
                                 <h3>${track.track_title || 'Untitled'}</h3>
-                                <p>By ${track.author_alias || 'Anonymous'} • ${date}</p>
+                                <p>By ${track.author_alias || 'Unknown'} • ${date}</p>
                             </div>
                         </div>
                         <audio controls src="${track.file_url}"></audio>
                     `;
-                    tracksList.appendChild(listItem);
+                    tracksList.appendChild(li);
                 });
-            } else {
-                tracksList.innerHTML = '<li class="status-message">No tracks found.</li>';
+            } catch (err) {
+                tracksList.innerHTML = `<li class="status-message error">Load error: ${err.message}</li>`;
             }
-        } catch (error) {
-            tracksList.innerHTML = `<li class="status-message error">Fetch error: ${error.message}</li>`;
         }
-    }
 
-    fetchTracks();
-</script>
+        // Close modal on outside click
+        window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
+
+        fetchTracks();
+    </script>
 </body>
 </html>
-
