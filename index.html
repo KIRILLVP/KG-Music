@@ -8,7 +8,6 @@
     <meta name="google-site-verification" content="99BrYQNJySJw7pONOquKyMcz9qyrDQ9weItFEUBFPKI" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Minimalist Horror Style */
         body {
             background-color: #000;
             color: #fff;
@@ -17,7 +16,6 @@
             padding: 0;
             min-height: 100vh;
         }
-
         .header-container {
             max-width: 900px;
             margin: 0 auto;
@@ -26,133 +24,47 @@
             justify-content: space-between;
             align-items: center;
         }
-
-        .banner {
-            width: 100%;
-            height: auto;
-            max-width: 600px;
-        }
-
+        .banner { width: 100%; height: auto; max-width: 600px; }
         #upload-button {
-            background-color: #333;
-            color: #fff;
-            border: 2px solid #555;
-            padding: 10px 15px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
+            background-color: #333; color: #fff; border: 2px solid #555;
+            padding: 10px 15px; cursor: pointer; font-size: 16px;
         }
-
-        #upload-button:hover {
-            background-color: #555;
-        }
-
-        #tracks-container {
-            max-width: 900px;
-            margin: 20px auto;
-            padding: 0 20px;
-        }
-
+        #tracks-container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
         .track-item {
-            background-color: #1a1a1a;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-left: 5px solid #ff0000;
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
+            background-color: #1a1a1a; padding: 15px; margin-bottom: 10px;
+            border-left: 5px solid #ff0000; border-radius: 4px;
         }
-        
-        .track-info-line {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .track-title-author h3 {
-            margin: 0;
-            font-size: 1.2em;
-            color: #ff4d4d;
-        }
-        
-        .track-title-author p {
-            margin: 2px 0 0 0;
-            color: #aaa;
-            font-size: 0.9em;
-        }
-
-        audio {
-            width: 100%;
-            background-color: #333;
-            margin-top: 10px;
-        }
-
-        /* Modal Styles */
+        .track-title-author h3 { margin: 0; color: #ff4d4d; }
+        .track-title-author p { margin: 2px 0 0 0; color: #aaa; font-size: 0.9em; }
+        audio { width: 100%; margin-top: 10px; }
         .modal {
-            display: none;
-            position: fixed;
-            z-index: 100;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.9);
+            display: none; position: fixed; z-index: 100; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
         }
-
         .modal-content {
-            background-color: #222;
-            margin: 10% auto;
-            padding: 25px;
-            border: 1px solid #444;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 8px;
+            background-color: #222; margin: 10% auto; padding: 25px;
+            border: 1px solid #444; width: 90%; max-width: 400px; border-radius: 8px;
         }
-
-        .modal-content input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            box-sizing: border-box;
-            background-color: #111;
-            border: 1px solid #555;
-            color: white;
+        .modal-content input {
+            width: 100%; padding: 12px; margin: 10px 0; box-sizing: border-box;
+            background-color: #111; border: 1px solid #555; color: white;
         }
-
         #publish-button {
-            background-color: #ff0000;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            width: 100%;
-            cursor: pointer;
-            font-weight: bold;
-            opacity: 0.5;
-            transition: opacity 0.3s;
-            pointer-events: none;
+            background-color: #ff0000; color: white; padding: 12px 20px;
+            border: none; width: 100%; cursor: pointer; font-weight: bold;
+            opacity: 0.5; pointer-events: none;
         }
-        
-        #publish-button.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .status-message {
-            margin-top: 15px;
-            font-size: 0.9em;
-            text-align: center;
-        }
+        #publish-button.active { opacity: 1; pointer-events: auto; }
+        .status-message { margin-top: 15px; text-align: center; font-size: 0.9em; }
         .error { color: #ff4d4d; }
         .success { color: #4dff4d; }
-        
         #hidden-file-input { display: none; }
     </style>
 </head>
 <body>
 
     <div class="header-container">
-        <img src="./bannerKG.jpg" alt="KIRILLVP GAMES Banner" class="banner">
+        <img src="./bannerKG.jpg" alt="KIRILLVP GAMES" class="banner">
         <button id="upload-button">Upload Music</button>
     </div>
 
@@ -168,31 +80,26 @@
     <div id="metadata-modal" class="modal">
         <div class="modal-content">
             <h3 style="margin-top: 0;">Track Details</h3>
-            <p style="font-size: 0.8em; color: #888;">File: <span id="selected-file-name" style="color: #eee;"></span></p>
-            
+            <p style="font-size: 0.8em; color: #888;">Selected: <span id="selected-file-name" style="color: #eee;"></span></p>
             <label>Artist Name:</label>
-            <input type="text" id="authorAlias" placeholder="Enter your name" maxlength="30">
-            
+            <input type="text" id="authorAlias" placeholder="Enter your name">
             <label>Track Title:</label>
-            <input type="text" id="trackTitle" placeholder="Enter song title" maxlength="50">
-
+            <input type="text" id="trackTitle" placeholder="Enter song title">
             <button id="publish-button">Publish Track</button>
             <p id="modalStatus" class="status-message"></p>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        const SUPABASE_URL = 'https://tqvrrhxelhoxvnrobksx.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdnJyaHhlbGhveHZucm9ia3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTg3MjYsImV4cCI6MjA4MTI5NDcyNn0.VwYABhMME_qOEWdy2-JSvEJP5wqOaUW5Mg92Yd7WiE0';
+        // Используем уникальное имя для клиента, чтобы не было ошибок "already declared"
+        const KG_SUPABASE_URL = 'https://tqvrrhxelhoxvnrobksx.supabase.co';
+        const KG_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdnJyaHhlbGhveHZucm9ia3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTg3MjYsImV4cCI6MjA4MTI5NDcyNn0.VwYABhMME_qOEWdy2-JSvEJP5wqOaUW5Mg92Yd7WiE0';
 
-        const { createClient } = window.supabase;
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const kg_supabase_client = window.supabase.createClient(KG_SUPABASE_URL, KG_SUPABASE_KEY);
         
         const BUCKET_NAME = 'music';
         const TABLE_NAME = 'Tracks';
 
-        // DOM elements
         const uploadBtn = document.getElementById('upload-button');
         const fileInput = document.getElementById('hidden-file-input');
         const modal = document.getElementById('metadata-modal');
@@ -202,29 +109,23 @@
         
         let selectedFile = null;
 
-        // --- LIMIT CHECKER (LocalStorage + IP Fallback) ---
         async function checkLimit() {
             const today = new Date().toDateString();
             const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
-            
-            // 1. Local check
             if (localData.date === today && localData.count >= 2) return false;
 
-            // 2. IP check with timeout to prevent VPN hanging
-            let ip = "anon_" + Math.floor(Math.random() * 1000000);
+            let ip = "anon_" + Date.now();
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2500);
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
                 const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
                 clearTimeout(timeoutId);
                 const data = await res.json();
                 ip = data.ip;
-            } catch (e) { console.warn("IP check skipped (VPN or Timeout)"); }
-
+            } catch (e) { console.log("Using session ID"); }
             return ip;
         }
 
-        // --- EVENTS ---
         uploadBtn.onclick = () => fileInput.click();
 
         fileInput.onchange = (e) => {
@@ -238,25 +139,20 @@
         };
 
         const validate = () => {
-            const isReady = document.getElementById('authorAlias').value.trim() && 
-                            document.getElementById('trackTitle').value.trim();
-            publishBtn.classList.toggle('active', !!isReady);
+            const ready = document.getElementById('authorAlias').value.trim() && document.getElementById('trackTitle').value.trim();
+            publishBtn.classList.toggle('active', !!ready);
         };
 
         document.getElementById('authorAlias').oninput = validate;
         document.getElementById('trackTitle').oninput = validate;
 
-        // --- UPLOAD LOGIC ---
         publishBtn.onclick = async () => {
-            const alias = document.getElementById('authorAlias').value.trim();
-            const title = document.getElementById('trackTitle').value.trim();
-
             publishBtn.disabled = true;
             modalStatus.textContent = "Checking limits...";
             modalStatus.className = "status-message";
 
-            const userIdentifier = await checkLimit();
-            if (!userIdentifier) {
+            const userId = await checkLimit();
+            if (!userId) {
                 modalStatus.textContent = "❌ Limit reached: 2 tracks per day.";
                 modalStatus.className = "status-message error";
                 publishBtn.disabled = false;
@@ -269,37 +165,27 @@
                 const fileExt = selectedFile.name.split('.').pop();
                 const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-                // 1. Storage Upload
-                const { error: storageErr } = await supabase.storage
-                    .from(BUCKET_NAME)
-                    .upload(fileName, selectedFile);
-
+                const { error: storageErr } = await kg_supabase_client.storage.from(BUCKET_NAME).upload(fileName, selectedFile);
                 if (storageErr) throw storageErr;
 
-                // 2. Get Public Link
-                const { data: linkData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+                const { data: linkData } = kg_supabase_client.storage.from(BUCKET_NAME).getPublicUrl(fileName);
 
-                // 3. Database Entry
-                const { error: dbErr } = await supabase
-                    .from(TABLE_NAME)
-                    .insert([{
-                        author_alias: alias,
-                        track_title: title,
-                        file_url: linkData.publicUrl,
-                        user_ip: userIdentifier
-                    }]);
+                const { error: dbErr } = await kg_supabase_client.from(TABLE_NAME).insert([{
+                    author_alias: document.getElementById('authorAlias').value.trim(),
+                    track_title: document.getElementById('trackTitle').value.trim(),
+                    file_url: linkData.publicUrl,
+                    user_ip: userId
+                }]);
 
                 if (dbErr) throw dbErr;
 
-                // 4. Update local limit
                 const today = new Date().toDateString();
                 const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
                 localStorage.setItem('upload_limit', JSON.stringify({
-                    date: today,
-                    count: (localData.date === today ? localData.count : 0) + 1
+                    date: today, count: (localData.date === today ? localData.count : 0) + 1
                 }));
 
-                modalStatus.textContent = "✅ Success! Published.";
+                modalStatus.textContent = "✅ Success!";
                 modalStatus.className = "status-message success";
 
                 setTimeout(() => {
@@ -310,29 +196,19 @@
                 }, 1500);
 
             } catch (err) {
-                console.error(err);
                 modalStatus.textContent = "❌ Error: " + err.message;
                 modalStatus.className = "status-message error";
                 publishBtn.disabled = false;
             }
         };
 
-        // --- FETCH TRACKS ---
         async function fetchTracks() {
             try {
-                const { data: tracks, error } = await supabase
-                    .from(TABLE_NAME)
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
+                const { data: tracks, error } = await kg_supabase_client.from(TABLE_NAME).select('*').order('created_at', { ascending: false });
                 if (error) throw error;
-
                 tracksList.innerHTML = tracks.length ? '' : '<li class="status-message">No tracks yet.</li>';
-
                 tracks.forEach(track => {
-                    const date = new Date(track.created_at).toLocaleDateString('en-US', {
-                        month: 'short', day: 'numeric', year: 'numeric'
-                    });
+                    const date = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                     const li = document.createElement('li');
                     li.className = 'track-item';
                     li.innerHTML = `
@@ -342,18 +218,15 @@
                                 <p>By ${track.author_alias || 'Unknown'} • ${date}</p>
                             </div>
                         </div>
-                        <audio controls src="${track.file_url}"></audio>
-                    `;
+                        <audio controls src="${track.file_url}"></audio>`;
                     tracksList.appendChild(li);
                 });
             } catch (err) {
-                tracksList.innerHTML = `<li class="status-message error">Load error: ${err.message}</li>`;
+                tracksList.innerHTML = `<li class="status-message error">Load error.</li>`;
             }
         }
 
-        // Close modal on outside click
-        window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
-
+        window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
         fetchTracks();
     </script>
 </body>
