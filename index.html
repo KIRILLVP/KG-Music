@@ -37,7 +37,7 @@
         .social-links {
             display: flex;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 5px;
         }
         .social-btn {
             text-decoration: none;
@@ -58,6 +58,16 @@
         }
         #tracks-container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
         
+        /* Стили дисклеймера */
+        .disclaimer {
+            font-size: 0.85em;
+            color: #777;
+            margin: -10px 0 20px 0;
+            font-style: italic;
+            border-left: 2px solid #444;
+            padding-left: 10px;
+        }
+
         .track-item {
             background-color: #1a1a1a; padding: 15px; margin-bottom: 15px;
             border-left: 5px solid #ff0000; border-radius: 4px;
@@ -131,6 +141,7 @@
 
     <div id="tracks-container">
         <h2>Latest Releases</h2>
+        <p class="disclaimer">To ensure platform stability, older uploaded files are periodically deleted.</p>
         <ul id="tracks-list" style="list-style: none; padding: 0;">
             <li class="status-message">Loading tracks...</li>
         </ul>
@@ -159,9 +170,8 @@
         const BUCKET_NAME = 'music';
         const TABLE_NAME = 'Tracks';
         
-        // --- CLEANUP SETTINGS ---
-        const MAX_TRACKS_LIMIT = 150; // Max tracks before cleanup
-        const CLEANUP_COUNT = 10;    // Number of oldest tracks to delete
+        const MAX_TRACKS_LIMIT = 150;
+        const CLEANUP_COUNT = 10;
 
         const uploadBtn = document.getElementById('upload-button');
         const fileInput = document.getElementById('hidden-file-input');
@@ -197,7 +207,6 @@
             return ip;
         }
 
-        // --- AUTO-CLEANUP LOGIC ---
         async function runAutoCleanup() {
             try {
                 const { count, error: countErr } = await kg_supabase_client
@@ -207,9 +216,6 @@
                 if (countErr) throw countErr;
 
                 if (count >= MAX_TRACKS_LIMIT) {
-                    console.log("Storage almost full. Cleaning up...");
-                    
-                    // 1. Get oldest tracks
                     const { data: oldest, error: fetchErr } = await kg_supabase_client
                         .from(TABLE_NAME)
                         .select('id, file_url')
@@ -219,20 +225,12 @@
                     if (fetchErr) throw fetchErr;
 
                     for (let track of oldest) {
-                        // Extract filename from URL
                         const fileName = track.file_url.split('/').pop();
-                        
-                        // Delete from Storage
                         await kg_supabase_client.storage.from(BUCKET_NAME).remove([fileName]);
-                        
-                        // Delete from DB
                         await kg_supabase_client.from(TABLE_NAME).delete().match({ id: track.id });
                     }
-                    console.log(`Cleanup finished. Deleted ${CLEANUP_COUNT} tracks.`);
                 }
-            } catch (err) {
-                console.error("Cleanup error:", err);
-            }
+            } catch (err) { console.error("Cleanup error:", err); }
         }
 
         uploadBtn.onclick = () => fileInput.click();
@@ -256,7 +254,6 @@
         publishBtn.onclick = async () => {
             publishBtn.disabled = true;
             modalStatus.textContent = "Checking systems...";
-            
             const userId = await checkLimit();
             if (!userId) {
                 modalStatus.textContent = "❌ Limit reached: 2 tracks per day.";
@@ -264,7 +261,6 @@
                 return;
             }
 
-            // Run cleanup before upload
             await runAutoCleanup();
 
             modalStatus.textContent = "Uploading track...";
