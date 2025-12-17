@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KIRILLVP GAMES Music</title>
+    <title>Share your music | KIRILLVP GAMES Music</title>
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
     <meta name="google-site-verification" content="99BrYQNJySJw7pONOquKyMcz9qyrDQ9weItFEUBFPKI" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -22,17 +22,42 @@
             margin: 0 auto;
             padding: 20px;
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .top-row {
+            width: 100%;
+            display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .banner { width: 100%; height: auto; max-width: 600px; }
+        
+        .social-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .social-btn {
+            text-decoration: none;
+            color: #fff;
+            background: #222;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            border: 1px solid #444;
+            transition: 0.3s;
+        }
+        .social-btn.yt:hover { background: #ff0000; border-color: #ff0000; }
+        .social-btn.dc:hover { background: #5865F2; border-color: #5865F2; }
+
         #upload-button {
             background-color: #333; color: #fff; border: 2px solid #555;
             padding: 10px 15px; cursor: pointer; font-size: 16px;
         }
         #tracks-container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
         
-        /* Стилизация карточки трека */
         .track-item {
             background-color: #1a1a1a; padding: 15px; margin-bottom: 15px;
             border-left: 5px solid #ff0000; border-radius: 4px;
@@ -44,13 +69,10 @@
             transform: scale(1.02);
         }
         
-        .track-info-line {
-            display: flex; justify-content: space-between; align-items: flex-start;
-        }
+        .track-info-line { display: flex; justify-content: space-between; align-items: flex-start; }
         .track-title-author h3 { margin: 0; color: #ff4d4d; }
         .track-title-author p { margin: 2px 0 0 0; color: #aaa; font-size: 0.9em; }
         
-        /* Кнопка Поделиться */
         .share-btn {
             background: #222; color: #888; border: 1px solid #444;
             padding: 5px 10px; font-size: 12px; cursor: pointer;
@@ -80,11 +102,6 @@
         #publish-button.active { opacity: 1; pointer-events: auto; }
         
         .status-message { margin-top: 15px; text-align: center; font-size: 0.9em; }
-        .error { color: #ff4d4d; }
-        .success { color: #4dff4d; }
-        #hidden-file-input { display: none; }
-
-        /* Всплывающее уведомление */
         #toast {
             visibility: hidden; min-width: 200px; background-color: #ff0000;
             color: #fff; text-align: center; border-radius: 2px;
@@ -94,6 +111,7 @@
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        #hidden-file-input { display: none; }
     </style>
 </head>
 <body>
@@ -101,8 +119,14 @@
     <div id="toast">Link copied!</div>
 
     <div class="header-container">
-        <img src="./bannerKG.jpg" alt="KIRILLVP GAMES" class="banner">
-        <button id="upload-button">Upload Music</button>
+        <div class="top-row">
+            <img src="./bannerKG.jpg" alt="KIRILLVP GAMES" class="banner">
+            <button id="upload-button">Upload Music</button>
+        </div>
+        <div class="social-links">
+            <a href="https://www.youtube.com/@kirillvpgames4932" target="_blank" class="social-btn yt">YouTube</a>
+            <a href="https://discord.gg/5F8PGnpaZv" target="_blank" class="social-btn dc">Discord</a>
+        </div>
     </div>
 
     <div id="tracks-container">
@@ -134,6 +158,10 @@
         const kg_supabase_client = window.supabase.createClient(KG_SUPABASE_URL, KG_SUPABASE_KEY);
         const BUCKET_NAME = 'music';
         const TABLE_NAME = 'Tracks';
+        
+        // --- CLEANUP SETTINGS ---
+        const MAX_TRACKS_LIMIT = 150; // Max tracks before cleanup
+        const CLEANUP_COUNT = 10;    // Number of oldest tracks to delete
 
         const uploadBtn = document.getElementById('upload-button');
         const fileInput = document.getElementById('hidden-file-input');
@@ -144,7 +172,6 @@
         
         let selectedFile = null;
 
-        // Показ уведомления
         function showToast(text) {
             const toast = document.getElementById("toast");
             toast.textContent = text;
@@ -152,12 +179,9 @@
             setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
         }
 
-        // Копирование ссылки
         function copyTrackLink(id) {
             const url = window.location.origin + window.location.pathname + "#t" + id;
-            navigator.clipboard.writeText(url).then(() => {
-                showToast("Link copied to clipboard!");
-            });
+            navigator.clipboard.writeText(url).then(() => { showToast("Link copied to clipboard!"); });
         }
 
         async function checkLimit() {
@@ -166,18 +190,52 @@
             if (localData.date === today && localData.count >= 2) return false;
             let ip = "anon_" + Date.now();
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-                const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
-                clearTimeout(timeoutId);
+                const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
                 ip = data.ip;
-            } catch (e) { console.log("Using session ID"); }
+            } catch (e) { console.log("Session ID used"); }
             return ip;
         }
 
-        uploadBtn.onclick = () => fileInput.click();
+        // --- AUTO-CLEANUP LOGIC ---
+        async function runAutoCleanup() {
+            try {
+                const { count, error: countErr } = await kg_supabase_client
+                    .from(TABLE_NAME)
+                    .select('*', { count: 'exact', head: true });
 
+                if (countErr) throw countErr;
+
+                if (count >= MAX_TRACKS_LIMIT) {
+                    console.log("Storage almost full. Cleaning up...");
+                    
+                    // 1. Get oldest tracks
+                    const { data: oldest, error: fetchErr } = await kg_supabase_client
+                        .from(TABLE_NAME)
+                        .select('id, file_url')
+                        .order('created_at', { ascending: true })
+                        .limit(CLEANUP_COUNT);
+
+                    if (fetchErr) throw fetchErr;
+
+                    for (let track of oldest) {
+                        // Extract filename from URL
+                        const fileName = track.file_url.split('/').pop();
+                        
+                        // Delete from Storage
+                        await kg_supabase_client.storage.from(BUCKET_NAME).remove([fileName]);
+                        
+                        // Delete from DB
+                        await kg_supabase_client.from(TABLE_NAME).delete().match({ id: track.id });
+                    }
+                    console.log(`Cleanup finished. Deleted ${CLEANUP_COUNT} tracks.`);
+                }
+            } catch (err) {
+                console.error("Cleanup error:", err);
+            }
+        }
+
+        uploadBtn.onclick = () => fileInput.click();
         fileInput.onchange = (e) => {
             selectedFile = e.target.files[0];
             if (selectedFile) {
@@ -192,25 +250,27 @@
             const ready = document.getElementById('authorAlias').value.trim() && document.getElementById('trackTitle').value.trim();
             publishBtn.classList.toggle('active', !!ready);
         };
-
         document.getElementById('authorAlias').oninput = validate;
         document.getElementById('trackTitle').oninput = validate;
 
         publishBtn.onclick = async () => {
             publishBtn.disabled = true;
-            modalStatus.textContent = "Checking limits...";
+            modalStatus.textContent = "Checking systems...";
+            
             const userId = await checkLimit();
             if (!userId) {
                 modalStatus.textContent = "❌ Limit reached: 2 tracks per day.";
-                modalStatus.className = "status-message error";
                 publishBtn.disabled = false;
                 return;
             }
 
-            modalStatus.textContent = "Uploading...";
+            // Run cleanup before upload
+            await runAutoCleanup();
+
+            modalStatus.textContent = "Uploading track...";
             try {
                 const fileExt = selectedFile.name.split('.').pop();
-                const trackId = Date.now(); // Используем как уникальный ID
+                const trackId = Date.now();
                 const fileName = `${trackId}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
                 const { error: storageErr } = await kg_supabase_client.storage.from(BUCKET_NAME).upload(fileName, selectedFile);
@@ -228,14 +288,13 @@
 
                 if (dbErr) throw dbErr;
 
-                // Обновление лимита
                 const today = new Date().toDateString();
                 const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
                 localStorage.setItem('upload_limit', JSON.stringify({
                     date: today, count: (localData.date === today ? localData.count : 0) + 1
                 }));
 
-                modalStatus.textContent = "✅ Success!";
+                modalStatus.textContent = "✅ Published!";
                 setTimeout(() => {
                     modal.style.display = 'none';
                     fetchTracks();
@@ -257,9 +316,7 @@
                 
                 tracks.forEach(track => {
                     const date = new Date(track.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                    // Создаем короткий ID из времени создания для ссылки
                     const trackShortId = new Date(track.created_at).getTime().toString().slice(-6);
-                    
                     const li = document.createElement('li');
                     li.className = 'track-item';
                     li.id = 't' + trackShortId;
@@ -275,22 +332,18 @@
                     tracksList.appendChild(li);
                 });
 
-                // Проверка на наличие якоря в ссылке после загрузки списка
                 const hash = window.location.hash;
                 if (hash) {
-                    const targetTrack = document.querySelector(hash);
-                    if (targetTrack) {
+                    const target = document.querySelector(hash);
+                    if (target) {
                         setTimeout(() => {
-                            targetTrack.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            targetTrack.classList.add('highlight');
-                            setTimeout(() => targetTrack.classList.remove('highlight'), 3000);
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            target.classList.add('highlight');
+                            setTimeout(() => target.classList.remove('highlight'), 3000);
                         }, 500);
                     }
                 }
-
-            } catch (err) {
-                tracksList.innerHTML = `<li class="status-message error">Load error.</li>`;
-            }
+            } catch (err) { tracksList.innerHTML = `<li class="status-message error">Load error.</li>`; }
         }
 
         window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
