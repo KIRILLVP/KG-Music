@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KIRILLVP GAMES Music</title>
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
-  <meta name="google-site-verification" content="99BrYQNJySJw7pONOquKyMcz9qyrDQ9weItFEUBFPKI" />
+    <meta name="google-site-verification" content="99BrYQNJySJw7pONOquKyMcz9qyrDQ9weItFEUBFPKI" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Стиль для черной страницы и минимализма */
+        /* Minimalist Dark Style */
         body {
             background-color: #000;
             color: #fff;
@@ -30,7 +30,7 @@
         .banner {
             width: 100%;
             height: auto;
-            max-width: 600px; /* Ограничение для баннера */
+            max-width: 600px;
         }
 
         #upload-button {
@@ -47,7 +47,6 @@
             background-color: #555;
         }
 
-        /* Стиль списка треков */
         #tracks-container {
             max-width: 900px;
             margin: 20px auto;
@@ -58,7 +57,7 @@
             background-color: #1a1a1a;
             padding: 15px;
             margin-bottom: 10px;
-            border-left: 5px solid #ff0000; /* Хоррор-акцент */
+            border-left: 5px solid #ff0000; /* Horror Accent */
             border-radius: 4px;
             display: flex;
             flex-direction: column;
@@ -88,15 +87,15 @@
         }
 
         audio {
-            width: 100%; /* Проигрыватель на всю ширину */
+            width: 100%;
             background-color: #333;
         }
 
-        /* Стиль модального окна (всплывающего окна) */
+        /* Modal Styles */
         .modal {
-            display: none; /* Скрыто по умолчанию */
+            display: none;
             position: fixed;
-            z-index: 1;
+            z-index: 10;
             left: 0;
             top: 0;
             width: 100%;
@@ -131,7 +130,7 @@
             padding: 10px 20px;
             border: none;
             cursor: pointer;
-            opacity: 0.5; /* Сначала кнопка неактивна */
+            opacity: 0.5;
             transition: opacity 0.3s;
             pointer-events: none;
             margin-top: 10px;
@@ -149,7 +148,6 @@
         .error { color: #ff4d4d; }
         .success { color: #4dff4d; }
         
-        /* Скрытый инпут для выбора файла */
         #hidden-file-input {
             display: none;
         }
@@ -159,14 +157,13 @@
 
     <div class="header-container">
         <img src="./bannerKG.jpg" alt="KIRILLVP GAMES Banner" class="banner">
-        
         <button id="upload-button">Upload your music</button>
     </div>
 
     <div id="tracks-container">
-        <h2>Загруженные треки:</h2>
-        <ul id="tracks-list">
-            <li class="status-message">Загрузка списка треков...</li>
+        <h2>Recent Tracks:</h2>
+        <ul id="tracks-list" style="list-style: none; padding: 0;">
+            <li class="status-message">Loading tracks...</li>
         </ul>
     </div>
     
@@ -174,14 +171,14 @@
 
     <div id="metadata-modal" class="modal">
         <div class="modal-content">
-            <h3>Введите информацию о треке</h3>
-            <p>Выбран файл: <strong id="selected-file-name"></strong></p>
+            <h3>Track Information</h3>
+            <p>Selected: <strong id="selected-file-name"></strong></p>
             
             <label for="authorAlias">Your name or nickname:</label>
-            <input type="text" id="authorAlias" placeholder="Псевдоним автора" required>
+            <input type="text" id="authorAlias" placeholder="e.g. KIRILLVP" required>
             
             <label for="trackTitle">Track title:</label>
-            <input type="text" id="trackTitle" placeholder="Название трека" required>
+            <input type="text" id="trackTitle" placeholder="e.g. Dark Forest Theme" required>
 
             <button id="publish-button">Publish</button>
             <p id="modalStatus" class="status-message"></p>
@@ -189,21 +186,17 @@
     </div>
 
     <script>
-        // --- 1. ВАШИ КЛЮЧИ SUPABASE (Интегрированы) ---
+        // --- 1. SUPABASE CONFIG ---
         const SUPABASE_URL = 'https://tqvrrhxelhoxvnrobksx.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxdnJyaHhlbGhveHZucm9ia3N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MTg3MjYsImV4cCI6MjA4MTI5NDcyNn0.VwYABhMME_qOEWdy2-JSvEJP5wqOaUW5Mg92Yd7WiE0';
 
-        // ИСПРАВЛЕНИЕ #1: Получаем createClient из глобального объекта window.supabase
-        const { createClient } = window.supabase; 
-        
-        // Инициализация клиента Supabase (теперь createClient доступен)
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         const BUCKET_NAME = 'music';
-        // ИСПРАВЛЕНИЕ #2: Используем 'Tracks' с заглавной буквы, как названа таблица в Supabase
-        const TABLE_NAME = 'Tracks'; 
+        const TABLE_NAME = 'Tracks';
 
-        // Элементы DOM
+        // DOM Elements
         const uploadButton = document.getElementById('upload-button');
         const hiddenFileInput = document.getElementById('hidden-file-input');
         const metadataModal = document.getElementById('metadata-modal');
@@ -214,30 +207,49 @@
         const modalStatus = document.getElementById('modalStatus');
         const tracksList = document.getElementById('tracks-list');
         
-        let selectedFile = null; // Переменная для хранения выбранного файла
+        let selectedFile = null;
 
-        // --- 2. ЛОГИКА ОТКРЫТИЯ МОДАЛЬНОГО ОКНА ---
+        // --- LIMIT CHECKING LOGIC ---
+        async function canUpload() {
+            // 1. Local check
+            const today = new Date().toDateString();
+            const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
+            
+            if (localData.date === today && localData.count >= 2) return false;
 
-        // Нажатие на кнопку "Upload your music" открывает проводник
-        uploadButton.addEventListener('click', () => {
-            hiddenFileInput.click();
-        });
+            // 2. Database check (IP based)
+            try {
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const { ip } = await ipRes.json();
+                
+                const { data, count, error } = await supabase
+                    .from(TABLE_NAME)
+                    .select('created_at', { count: 'exact', head: true })
+                    .eq('user_ip', ip)
+                    .gte('created_at', new Date().toISOString().split('T')[0]);
 
-        // Как только файл выбран, открывается модальное окно
-        hiddenFileInput.addEventListener('change', (e) => {
+                if (!error && count >= 2) return false;
+                return ip; // Return IP to save it later
+            } catch (e) {
+                console.warn("IP check failed, relying on local storage.");
+                return "unknown"; 
+            }
+        }
+
+        // --- UI LOGIC ---
+        uploadButton.addEventListener('click', () => hiddenFileInput.click());
+
+        hiddenFileInput.addEventListener('change', async (e) => {
             selectedFile = e.target.files[0];
             if (selectedFile) {
-                // Проверка на MP3 или WAV
                 const fileType = selectedFile.type;
                 if (fileType !== 'audio/mpeg' && fileType !== 'audio/wav') {
-                    alert('Пожалуйста, выберите файл в формате .mp3 или .wav');
-                    selectedFile = null;
+                    alert('Please select .mp3 or .wav file.');
                     return;
                 }
 
                 selectedFileName.textContent = selectedFile.name;
                 metadataModal.style.display = 'block';
-                // Сброс полей
                 authorAliasInput.value = '';
                 trackTitleInput.value = '';
                 modalStatus.textContent = '';
@@ -245,7 +257,6 @@
             }
         });
 
-        // --- 3. ВАЛИДАЦИЯ ФОРМЫ (АКТИВАЦИЯ КНОПКИ) ---
         [authorAliasInput, trackTitleInput].forEach(input => {
             input.addEventListener('input', () => {
                 if (authorAliasInput.value.trim() && trackTitleInput.value.trim()) {
@@ -256,112 +267,96 @@
             });
         });
 
-
-        // --- 4. ФУНКЦИЯ ПУБЛИКАЦИИ (UPLOAD и INSERT) ---
+        // --- PUBLISH LOGIC ---
         publishButton.addEventListener('click', async () => {
             const alias = authorAliasInput.value.trim();
             const title = trackTitleInput.value.trim();
 
-            if (!selectedFile || !alias || !title) {
-                modalStatus.textContent = 'Заполните все поля и выберите файл.';
-                modalStatus.className = 'status-message error';
-                return;
-            }
-
-            modalStatus.textContent = 'Загрузка... Не закрывайте окно.';
+            modalStatus.textContent = 'Checking limits...';
             modalStatus.className = 'status-message';
             publishButton.disabled = true;
 
+            const userIp = await canUpload();
+            if (userIp === false) {
+                modalStatus.textContent = '❌ Limit reached: 2 tracks per day.';
+                modalStatus.className = 'status-message error';
+                publishButton.disabled = false;
+                return;
+            }
+
+            modalStatus.textContent = 'Uploading... Please wait.';
+
             try {
-                // 1. Загружаем файл в Storage с уникальным именем
                 const fileExtension = selectedFile.name.split('.').pop();
-                // Путь: 'music/timestamp_title_author.mp3'
-                const filePath = `${Date.now()}_${title.replace(/\s/g, '_')}_${alias.replace(/\s/g, '_')}.${fileExtension}`;
+                const filePath = `${Date.now()}_${title.replace(/\s/g, '_')}.${fileExtension}`;
                 
                 const { error: uploadError } = await supabase.storage
                     .from(BUCKET_NAME)
-                    .upload(filePath, selectedFile, {
-                        cacheControl: '3600',
-                        upsert: false // Не перезаписывать
-                    });
+                    .upload(filePath, selectedFile);
 
                 if (uploadError) throw uploadError;
                 
-                // 2. Получаем публичный URL для файла
                 const { data: publicUrlData } = await supabase.storage
                     .from(BUCKET_NAME)
                     .getPublicUrl(filePath);
 
-                // 3. Записываем информацию о треке в Database
                 const { error: insertError } = await supabase
                     .from(TABLE_NAME)
                     .insert({
                         author_alias: alias,
-                        track_title: title, // Добавляем название трека
-                        file_path: filePath,
-                        file_url: publicUrlData.publicUrl // Храним готовый URL
+                        track_title: title,
+                        file_url: publicUrlData.publicUrl,
+                        user_ip: userIp // Save IP to DB
                     });
 
                 if (insertError) throw insertError;
 
-                // 4. Успех
-                modalStatus.textContent = '✅ Трек опубликован!';
+                // Update Local Storage Limit
+                const today = new Date().toDateString();
+                const localData = JSON.parse(localStorage.getItem('upload_limit') || '{}');
+                const newCount = (localData.date === today ? localData.count : 0) + 1;
+                localStorage.setItem('upload_limit', JSON.stringify({ date: today, count: newCount }));
+
+                modalStatus.textContent = '✅ Success! Track published.';
                 modalStatus.className = 'status-message success';
                 
-                // Закрываем модальное окно через 1.5 секунды
                 setTimeout(() => {
                     metadataModal.style.display = 'none';
-                    fetchTracks(); // Обновляем список треков
+                    fetchTracks();
                     publishButton.disabled = false;
                 }, 1500);
 
             } catch (error) {
-                console.error('Ошибка публикации:', error);
-                // Проверка на ошибку RLS (политики безопасности)
-                if (error.message.includes('permission denied')) {
-                     modalStatus.textContent = `❌ Ошибка публикации: Проверьте политики RLS в Supabase.`;
-                } else if (error.message.includes('not find the table')) {
-                     // Дополнительная проверка на случай, если вы забыли обновить имя таблицы
-                     modalStatus.textContent = `❌ Ошибка: Не найдена таблица 'Tracks'. Проверьте регистр!`;
-                } else {
-                     modalStatus.textContent = `❌ Ошибка публикации: ${error.message}`;
-                }
+                modalStatus.textContent = `❌ Error: ${error.message}`;
                 modalStatus.className = 'status-message error';
                 publishButton.disabled = false;
             }
         });
 
-
-        // --- 5. ФУНКЦИЯ ДЛЯ ОТОБРАЖЕНИЯ (SELECT) ---
         async function fetchTracks() {
-            tracksList.innerHTML = '<li class="status-message">Обновление списка...</li>';
-
+            tracksList.innerHTML = '<li class="status-message">Refreshing list...</li>';
             try {
-                // Получаем список треков, сортируя по дате создания (новые сверху)
                 const { data: tracks, error } = await supabase
                     .from(TABLE_NAME)
                     .select('author_alias, track_title, file_url, created_at')
-                    .order('created_at', { ascending: false }); 
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
-
                 tracksList.innerHTML = '';
 
                 if (tracks && tracks.length > 0) {
                     tracks.forEach(track => {
                         const listItem = document.createElement('li');
                         listItem.className = 'track-item';
-                        
-                        // Форматируем дату (опционально)
-                        const date = new Date(track.created_at).toLocaleDateString('ru-RU', {
+                        const date = new Date(track.created_at).toLocaleDateString('en-US', {
                             year: 'numeric', month: 'short', day: 'numeric'
                         });
 
                         listItem.innerHTML = `
                             <div class="track-info-line">
                                 <div class="track-title-author">
-                                    <h3>${track.track_title || 'Нет названия'}</h3>
-                                    <p>Автор: ${track.author_alias || 'Аноним'} (от ${date})</p>
+                                    <h3>${track.track_title || 'Untitled'}</h3>
+                                    <p>By ${track.author_alias || 'Anonymous'} • ${date}</p>
                                 </div>
                             </div>
                             <audio controls src="${track.file_url}"></audio>
@@ -369,18 +364,14 @@
                         tracksList.appendChild(listItem);
                     });
                 } else {
-                    tracksList.innerHTML = '<li class="status-message">Пока нет загруженных треков. Будьте первым!</li>';
+                    tracksList.innerHTML = '<li class="status-message">No tracks found.</li>';
                 }
-
             } catch (error) {
-                console.error('Ошибка получения треков:', error);
-                tracksList.innerHTML = `<li class="status-message error">Ошибка загрузки списка: ${error.message}</li>`;
+                tracksList.innerHTML = `<li class="status-message error">Fetch error: ${error.message}</li>`;
             }
         }
 
-        // Запускаем загрузку треков при первом открытии страницы
         fetchTracks();
     </script>
 </body>
 </html>
-
