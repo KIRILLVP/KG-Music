@@ -70,7 +70,6 @@
         }
         #tracks-container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
         
-        /* Стили дисклеймера */
         .disclaimer {
             font-size: 0.85em;
             color: #777;
@@ -228,17 +227,23 @@
                 if (countErr) throw countErr;
 
                 if (count >= MAX_TRACKS_LIMIT) {
+                    // Извлекаем и URL для подстраховки, и file_path для надежности
                     const { data: oldest, error: fetchErr } = await kg_supabase_client
                         .from(TABLE_NAME)
-                        .select('id, file_url')
+                        .select('id, file_url, file_path')
                         .order('created_at', { ascending: true })
                         .limit(CLEANUP_COUNT);
 
                     if (fetchErr) throw fetchErr;
 
                     for (let track of oldest) {
-                        const fileName = track.file_url.split('/').pop();
-                        await kg_supabase_client.storage.from(BUCKET_NAME).remove([fileName]);
+                        // Используем file_path, если он есть, иначе вырезаем из URL
+                        const fileNameToDelete = track.file_path || track.file_url.split('/').pop();
+                        
+                        // Удаляем из хранилища (Storage)
+                        await kg_supabase_client.storage.from(BUCKET_NAME).remove([fileNameToDelete]);
+                        
+                        // Удаляем запись из таблицы (Database)
                         await kg_supabase_client.from(TABLE_NAME).delete().match({ id: track.id });
                     }
                 }
@@ -279,17 +284,22 @@
             try {
                 const fileExt = selectedFile.name.split('.').pop();
                 const trackId = Date.now();
+                // Генерируем уникальное имя файла
                 const fileName = `${trackId}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
+                // 1. Загрузка в Storage
                 const { error: storageErr } = await kg_supabase_client.storage.from(BUCKET_NAME).upload(fileName, selectedFile);
                 if (storageErr) throw storageErr;
 
+                // 2. Получение публичной ссылки
                 const { data: linkData } = kg_supabase_client.storage.from(BUCKET_NAME).getPublicUrl(fileName);
 
+                // 3. Вставка в БД (теперь заполняем и file_url, и file_path)
                 const { error: dbErr } = await kg_supabase_client.from(TABLE_NAME).insert([{
                     author_alias: document.getElementById('authorAlias').value.trim(),
                     track_title: document.getElementById('trackTitle').value.trim(),
                     file_url: linkData.publicUrl,
+                    file_path: fileName, // СОХРАНЯЕМ ИМЯ ФАЙЛА ДЛЯ ОЧИСТКИ
                     user_ip: userId,
                     created_at: new Date()
                 }]);
